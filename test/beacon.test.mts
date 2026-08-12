@@ -1,5 +1,6 @@
 import { deepEqual } from 'node:assert/strict'
 import fs from 'node:fs'
+import { syncBuiltinESMExports } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, type TestContext } from 'node:test'
@@ -41,6 +42,13 @@ const world = (over: Partial<BeaconInput> = {}): BeaconInput => ({
 const sessionTab = (label: string) => ({ label, isClaudePanel: true })
 const otherTab = (label: string) => ({ label, isClaudePanel: false })
 
+/**
+ * A session tab bearing some conversation title — which one does not matter to any
+ * test below. Joining the label onto a title is the next ticket's work; what is under
+ * test here is which sessions are gathered before anything is joined at all.
+ */
+const titledTab = () => sessionTab('Traiter le ticket sque…')
+
 test('a brand new session tab is indeterminate for want of a title', () => {
   // "Claude Code" is the literal label the Claude webview uses until a conversation
   // title exists. No join is attempted on it: it names no session.
@@ -52,7 +60,7 @@ test('a brand new session tab is indeterminate for want of a title', () => {
 test('a titled session tab matches nothing when nothing runs in this window', () => {
   // An empty registry is a legitimate state of the world, not a failure: Claude is
   // installed, no session of this window is alive, so no session can carry the label.
-  const state = resolveBeacon(world({ activeTab: sessionTab('Traiter le ticket sque…') }))
+  const state = resolveBeacon(world({ activeTab: titledTab() }))
 
   deepEqual(state, { kind: 'indeterminate', reason: 'no-match', candidates: [] })
 })
@@ -92,9 +100,20 @@ const fsCallsDuring = (t: TestContext, run: () => void): string[] => {
       .map(([name]) => [name, t.mock.method(module, name)] as const),
   )
 
-  run()
-
-  return spies.filter(([, spy]) => spy.mock.callCount() > 0).map(([name]) => name)
+  // A named import of a builtin is bound once, when the module is linked: replacing
+  // `fs.readFileSync` afterwards leaves `import { readFileSync }` pointing at the
+  // original. Without this line the spies sit where nothing looks and both assertions
+  // below pass whatever the code does — the failure mode a spy test exists to avoid.
+  syncBuiltinESMExports()
+  try {
+    run()
+    return spies.filter(([, spy]) => spy.mock.callCount() > 0).map(([name]) => name)
+  } finally {
+    // Undone here rather than by the test runner, which restores the module object
+    // after the test — and would leave the bindings pointing at a spent spy.
+    for (const [, spy] of spies) spy.mock.restore()
+    syncBuiltinESMExports()
+  }
 }
 
 test('reads nothing off disk while no session tab is active', (t) => {
@@ -117,7 +136,7 @@ test('never writes in the configuration directory', (t) => {
     resolveBeacon(
       world({
         configDir: fixture('dead-sessions'),
-        activeTab: sessionTab('Traiter le ticket sque…'),
+        activeTab: titledTab(),
         probe: liveClaude(4201),
       }),
     ),
@@ -145,7 +164,7 @@ test('the sessions of this window are the live ones sharing its working director
     world({
       configDir: fixture('live-sessions'),
       windowCwd: '/Users/dev/project',
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4101, 4102, 4103),
     }),
   )
@@ -168,12 +187,36 @@ test('the sessions of this window are the live ones sharing its working director
   })
 })
 
+test('a second window on that project sees exactly the same sessions', () => {
+  // The other of the two windows, and there is nothing in the `cwd` to tell them
+  // apart — ADR-0002: «Le `cwd` seul ne discrimine pas deux fenêtres ouvertes sur le
+  // même projet». Each of them is shown both sessions, which is honest, and the
+  // parent chain is what will narrow it. The trailing separator is not decoration:
+  // a working directory reaches us as the editor spells it, not as the registry did.
+  const [first, second] = ['/Users/dev/project', '/Users/dev/project/'].map((windowCwd) =>
+    resolveBeacon(
+      world({
+        configDir: fixture('live-sessions'),
+        windowCwd,
+        activeTab: titledTab(),
+        probe: liveClaude(4101, 4102, 4103),
+      }),
+    ),
+  )
+
+  deepEqual(second, first)
+  deepEqual(
+    second?.kind === 'indeterminate' ? second.candidates.map((s) => s.pid) : [],
+    [4101, 4102],
+  )
+})
+
 test('a window on another project sees its own session and no other', () => {
   const state = resolveBeacon(
     world({
       configDir: fixture('live-sessions'),
       windowCwd: '/Users/dev/other',
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4101, 4102, 4103),
     }),
   )
@@ -228,7 +271,7 @@ test('a session fantôme, and a pid recycled by something else, are not sessions
   const state = resolveBeacon(
     world({
       configDir: fixture('dead-sessions'),
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4201),
     }),
   )
@@ -252,7 +295,7 @@ test('the registry is read where the configuration directory points', () => {
   const state = resolveBeacon(
     world({
       configDir: fixture('moved-config'),
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4301),
     }),
   )
@@ -276,7 +319,7 @@ test('no configuration directory at all shows nothing, and says nothing', () => 
   const state = resolveBeacon(
     world({
       configDir: fixture('claude-was-never-installed'),
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
     }),
   )
 
@@ -288,7 +331,7 @@ test('a window with no folder open has no session of its own', () => {
     world({
       configDir: fixture('live-sessions'),
       windowCwd: null,
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4101, 4102, 4103),
     }),
   )
@@ -329,7 +372,7 @@ test('a working directory reached through a symlink is the same directory', (t) 
     world({
       configDir: join(root, 'config'),
       windowCwd: throughLink,
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4501),
     }),
   )
@@ -360,7 +403,7 @@ test('a working directory whose accents are decomposed is the same directory', (
     world({
       configDir: fixture('decomposed-path'),
       windowCwd: composed,
-      activeTab: sessionTab('Traiter le ticket sque…'),
+      activeTab: titledTab(),
       probe: liveClaude(4401),
     }),
   )

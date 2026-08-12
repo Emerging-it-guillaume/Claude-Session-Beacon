@@ -1,8 +1,11 @@
 /**
- * The seam — the single point where anything is decided, and the only module under
- * test. It never imports `vscode`, so it can be exercised from a plain Node process
- * against a fixture directory; the adapter flattens the editor down to `activeTab`
- * and hands the answer back to the status bar without adding a rule of its own.
+ * The seam — the single point where the display is decided, and what the tests know.
+ * It never imports `vscode`, so it can be exercised from a plain Node process against
+ * a fixture directory; the adapter flattens the editor down to `activeTab` and hands
+ * the answer back to the status bar without adding a rule of its own.
+ *
+ * What sits behind it — the registry, the process probe — is decomposition, not more
+ * seams: those modules can be cut differently tomorrow without a test being rewritten.
  */
 
 import { windowSessions } from './registry.mts'
@@ -73,7 +76,11 @@ export function resolveBeacon(input: BeaconInput): BeaconState {
 
   // The first disk read of the extension, and it happens here and nowhere earlier: a
   // window where no session tab is ever focused costs nothing at all.
-  const candidates = windowSessions(input)
+  const candidates = windowSessions({
+    configDir: input.configDir,
+    windowCwd: input.windowCwd,
+    probe: input.probe,
+  })
 
   // No configuration directory: Claude Code is not installed on this side. A status
   // bar is common ground — say nothing, and report nothing to a user who never asked.

@@ -16,8 +16,13 @@ const CLAUDE = 'claude'
  * identified, so a pid recycled by an unrelated program is rejected. On Windows only
  * existence is checked: identifying a process there means starting a PowerShell, and
  * paying that at every tab change contradicts the decision to read nothing until an
- * event demands it. The difference is reported by the diagnosis rather than hidden —
- * "this session is dead" and "this session may be dead" are different answers.
+ * event demands it.
+ *
+ * ADR-0002 asks for identity everywhere; the Windows exception is the one issue #4
+ * grants — "sur Windows, existence seule, et le diagnostic dira laquelle des deux
+ * vérifications a servi". This value is that answer, and the diagnosis command is
+ * what will show it; until that ticket lands nothing displays it, and a Windows user
+ * can be shown a session whose pid was recycled.
  */
 export const LIVENESS_CHECK: 'process-identity' | 'existence-only' =
   process.platform === 'win32' ? 'existence-only' : 'process-identity'
@@ -50,6 +55,12 @@ function exists(pid: number): boolean {
  * Existence *and* identity. `ps` prints the command of a live pid and exits non-zero
  * for a pid that names nothing — on macOS the full path of the executable, on Linux
  * its name, which is why the comparison is on the basename.
+ *
+ * ADR-0002 pointed at the `procStart` of the registry entry as the evidence of
+ * identity. It is not used, and cannot be: the port is `isLiveClaude(pid)`, a shape
+ * the spec fixes, and reaching for the entry from here would put the process table
+ * back inside what the fixtures are meant to cover. The command is the evidence the
+ * pid alone can buy.
  *
  * The check is strict on purpose: a process this cannot recognise as `claude` costs
  * one candidate and shows *session indéterminée*, where a loose one would eventually

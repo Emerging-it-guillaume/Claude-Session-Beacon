@@ -42,7 +42,7 @@ export function windowSessions(input: {
 
   const window = canonical(windowCwd)
 
-  return entries(join(configDir, 'sessions'))
+  return readEntries(join(configDir, 'sessions'))
     .filter((entry) => canonical(entry.cwd) === window)
     // Liveness last: the probe is the one thing that costs something, and by here it
     // is asked only about the handful of entries that are of this window at all.
@@ -82,7 +82,7 @@ function canonical(dir: string): string {
   return cased.normalize('NFC')
 }
 
-function entries(sessionsDir: string): RegistryEntry[] {
+function readEntries(sessionsDir: string): RegistryEntry[] {
   let files: string[]
   try {
     files = readdirSync(sessionsDir)
@@ -94,8 +94,8 @@ function entries(sessionsDir: string): RegistryEntry[] {
 
   return files
     .filter((file) => ENTRY_FILE.test(file))
-    .map((file) => entry(join(sessionsDir, file)))
-    .filter((entry): entry is RegistryEntry => entry !== null)
+    .map((file) => readEntry(join(sessionsDir, file)))
+    .filter((parsed): parsed is RegistryEntry => parsed !== null)
 }
 
 /**
@@ -103,7 +103,7 @@ function entries(sessionsDir: string): RegistryEntry[] {
  * it, or a record whose shape moved under us. Skipping it costs one candidate; trusting
  * it would risk a name, and a name shown wrongly is the one failure that matters here.
  */
-function entry(path: string): RegistryEntry | null {
+function readEntry(path: string): RegistryEntry | null {
   let record: unknown
   try {
     record = JSON.parse(readFileSync(path, 'utf8'))

@@ -1,5 +1,3 @@
-import { homedir } from 'node:os'
-import { join } from 'node:path'
 import * as vscode from 'vscode'
 
 import {
@@ -9,6 +7,7 @@ import {
   type IndeterminateReason,
   type SessionSummary,
 } from './beacon.mts'
+import { configDir } from './config-dir.mts'
 import { processProbe } from './probe.mts'
 
 /**
@@ -39,18 +38,8 @@ const WHY: Record<IndeterminateReason, string> = {
   'no-match': 'No live session of this window matches this tab label.',
 }
 
-/**
- * The same rule as the binary's, duplicated verbatim so both look in the same place.
- * No setting of our own contributes here: a third source of truth would drift from the
- * other two, and the only symptom would be a permanent, unexplainable *indeterminate*.
- */
-function configDir(): string {
-  const configured = process.env.CLAUDE_CONFIG_DIR
-  return (configured ? configured : join(homedir(), '.claude')).normalize('NFC')
-}
-
-/** The sessions of this window, as the tooltip lists them under whatever is shown. */
-function sessionList(sessions: SessionSummary[]): string {
+/** What runs in this window, spelled out under whatever the status bar shows. */
+function sessionsOfWindow(sessions: SessionSummary[]): string {
   if (sessions.length === 0) return 'No live session in this window.'
 
   const lines = sessions.map((s) => `• ${s.peerName} — pid ${s.pid} — ${s.cwd}`)
@@ -134,10 +123,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const shown = ensureStatusBarItem(settings)
     if (state.kind === 'peer') {
-      // The name only. What sits behind it — the click that copies — arrives with the
-      // join in #6, which is what first produces this state.
+      // The name only. What sits behind it — the tooltip, the click that copies —
+      // arrives with the join in #6, which is what first produces this state.
       shown.text = `${ICON} ${state.peerName}`
-      shown.tooltip = sessionList(state.siblings)
     } else {
       // What could not be identified is on the first line; what is running in this
       // window is on the ones below. Knowing what sits next door is worth reading
@@ -146,7 +134,7 @@ export function activate(context: vscode.ExtensionContext): void {
       shown.tooltip = [
         `${INDETERMINATE} — ${WHY[state.reason]}`,
         '',
-        sessionList(state.candidates),
+        sessionsOfWindow(state.candidates),
       ].join('\n')
     }
     shown.show()
