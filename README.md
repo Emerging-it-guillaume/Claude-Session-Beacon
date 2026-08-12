@@ -10,17 +10,21 @@ Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the pe
 
 ## Why
 
-A Claude Code session already has a peer name — the name that works as an address in
-session-to-session messages, something like `sentry-server-41`. It is stable for the life
-of the process, and it is displayed nowhere. The tab shows the conversation title, which
-*describes* a session but does not *address* it.
+Claude Code sessions can message each other. A session lists the ones it can reach, picks
+one by name, and sends. The name is the address — and it is the whole of the addressing.
+Get it wrong and the message does not bounce: it arrives, in a different session, on a
+different project, doing different work.
 
-So you end up designating sessions by approximation — "the one on the left", "the one on
-the server". Here an ambiguity does not cost a misunderstanding: it sends a message to the
-wrong session.
+That address is the session's peer name, something like `sentry-server-41`. It is stable
+for the life of the process, and it is displayed nowhere you happen to be looking. The
+listing hands you names with no context. The tab in front of you shows a conversation
+title, which *describes* a session but does not *address* it. Nothing joins the two, so
+you end up designating sessions by approximation — "the one on the left", "the one on the
+server" — and addressing them by guess.
 
-This extension puts the peer name of the focused session in the status bar of every window,
-and copies it to the clipboard on click.
+This extension joins them. It puts the peer name of the focused session in the status bar
+of every window, and copies it to the clipboard on click: you read the name of the session
+you are actually looking at, and paste it straight into the message.
 
 **It never shows a peer name it is not sure of.** When identification fails — a brand new
 tab with no title yet, two tabs with the same title, a Claude Code update that moves
