@@ -26,7 +26,8 @@ const SETTINGS = 'claudeSessionBeacon'
  */
 const SESSION_TAB_VIEW_TYPE = 'claudeVSCodePanel'
 
-const ICON = '$(radio-tower)'
+/** Two speech bubbles: what the item names is a conversation, not a signal. */
+const ICON = '$(comment-discussion)'
 
 /** *Session indéterminée*, in the English the interface is written in. */
 const INDETERMINATE = 'Indeterminate session'
