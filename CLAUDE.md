@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+## Git workflow
+
+`develop` is the default and integration branch; `main` advances only by merging `develop`.
+Branch off `develop`, target `develop`, never push straight to either. See `docs/agents/git-workflow.md`.
+
 ## Agent skills
 
 ### Issue tracker

@@ -1,0 +1,23 @@
+name: Branch policy
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions: {}
+
+jobs:
+  source-must-be-develop:
+    name: source-must-be-develop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject any source branch other than develop
+        if: github.head_ref != 'develop'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          echo "::error::A pull request into main may only come from develop (source: $HEAD_REF)."
+          exit 1
+      - name: Accept
+        run: echo "develop -> main: compliant."
