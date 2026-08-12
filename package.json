@@ -1,7 +1,7 @@
 {
   "name": "claude-session-beacon",
   "displayName": "Claude Session Beacon",
-  "description": "Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the peer name of the focused Claude Code session in the VS Code status bar, so you can address it without ambiguity.",
+  "description": "Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the peer name of the focused Claude Code session in the VS Code status bar, so you can address it without ambiguity. Requires the Claude Code extension for VS Code — sessions run from the CLI in a terminal are not tracked.",
   "version": "0.0.0",
   "license": "MIT",
   "author": "Guillaume Gros",
