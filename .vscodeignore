@@ -1,8 +1,15 @@
 # The README claims that only `src/` ships. This is what makes that true.
+.github/**
+.vscode/**
 scripts/**
 test/**
 docs/**
 spike/**
+node_modules/**
+dist/**/*.map
 CONTEXT.md
 CLAUDE.md
+esbuild.mjs
+tsconfig.json
+.gitignore
 .vscodeignore

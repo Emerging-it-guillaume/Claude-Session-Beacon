@@ -26,9 +26,56 @@
   "engines": {
     "vscode": "^1.94.0"
   },
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": false
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Claude Session Beacon",
+      "properties": {
+        "claudeSessionBeacon.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the focused session in the status bar. Turn this off to silence the extension without uninstalling it."
+        },
+        "claudeSessionBeacon.statusBar.alignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "default": "left",
+          "description": "Which side of the status bar the item sits on."
+        },
+        "claudeSessionBeacon.statusBar.priority": {
+          "type": "number",
+          "default": 0,
+          "description": "Position within that side. A higher number moves the item further left."
+        }
+      }
+    }
+  },
   "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "package": "npm run build && vsce package",
     "icon": "node scripts/generate-icon.mjs",
-    "check:description": "node scripts/check-github-description.mjs",
-    "test": "node --test"
+    "check:description": "node scripts/check-github-description.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.94.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
   }
 }
