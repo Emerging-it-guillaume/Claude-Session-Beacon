@@ -1,0 +1,34 @@
+{
+  "name": "claude-session-beacon",
+  "displayName": "Claude Session Beacon",
+  "description": "Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the peer name of the focused Claude Code session in the VS Code status bar, so you can address it without ambiguity.",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": "Guillaume Gros",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Emerging-it-guillaume/Claude-Session-Beacon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Emerging-it-guillaume/Claude-Session-Beacon/issues"
+  },
+  "homepage": "https://github.com/Emerging-it-guillaume/Claude-Session-Beacon#readme",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude code",
+    "status bar",
+    "session",
+    "unofficial"
+  ],
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "scripts": {
+    "icon": "node scripts/generate-icon.mjs",
+    "check:description": "node scripts/check-github-description.mjs",
+    "test": "node --test"
+  }
+}

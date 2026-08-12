@@ -1,0 +1,8 @@
+# The README claims that only `src/` ships. This is what makes that true.
+scripts/**
+test/**
+docs/**
+spike/**
+CONTEXT.md
+CLAUDE.md
+.vscodeignore
