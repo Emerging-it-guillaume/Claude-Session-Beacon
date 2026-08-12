@@ -20,4 +20,5 @@ jobs:
           echo "::error::A pull request into main may only come from develop (source: $HEAD_REF)."
           exit 1
       - name: Accept
-        run: echo "develop -> main: compliant."
+        run: |
+          echo "Source branch develop, target main - compliant."
