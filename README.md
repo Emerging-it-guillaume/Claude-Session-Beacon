@@ -4,7 +4,7 @@
 
 # Claude Session Beacon
 
-Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the peer name of the focused Claude Code session in the VS Code status bar, so you can address it without ambiguity.
+Unofficial extension. Not affiliated with or endorsed by Anthropic. Shows the peer name of the focused Claude Code session in the VS Code status bar, so you can address it without ambiguity. Requires the Claude Code extension for VS Code — sessions run from the CLI in a terminal are not tracked.
 
 > **Status** — in development. Nothing is published on the Marketplace yet.
 
@@ -82,10 +82,17 @@ Two things get confused constantly, and the whole extension turns on the distinc
 ## Requirements
 
 - VS Code 1.94 or later
-- Claude Code, with at least one session started
+- The [Claude Code extension for VS Code][claude-code], with at least one session open in a
+  tab
+
+The beacon reads the Claude Code tab that is currently active in the window, so it only
+ever reports sessions opened through that extension. A session started with the `claude`
+CLI in a terminal opens no tab, and is not tracked.
 
 In WSL, SSH and containers the extension runs on the side where `claude` runs, which is
 where the sessions and transcripts actually live.
+
+[claude-code]: https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code
 
 ## Name and affiliation
 

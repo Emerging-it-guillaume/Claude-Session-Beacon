@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    // Source is ES modules; esbuild is what turns it into the CommonJS bundle the
+    // extension host loads, and `node --test` runs the same modules unbundled.
+    "module": "Preserve",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    // esbuild bundles; tsc only ever typechecks. Both source and tests import each
+    // other with an explicit `.ts` extension, which is what lets `node --test` run
+    // the tests straight from TypeScript with no build step.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "test", "esbuild.mjs"]
+}
