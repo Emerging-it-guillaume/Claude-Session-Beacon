@@ -85,9 +85,11 @@ where the sessions and transcripts actually live.
 
 ## Name and affiliation
 
-This is a personal project. It is not built, reviewed or endorsed by Anthropic, and it
-carries none of their branding — the logo is a beacon, and nothing more. The name starts
-with "Claude" because that is what the extension is about, not who it is from.
+This is a personal project. It is not built, reviewed or endorsed by Anthropic. The name
+starts with "Claude" because that is what the extension is about, not who it is from. The
+logo is a VS Code tab lifted out of a row — no borrowed mark, though its colours sit
+deliberately in Claude's own family, so the extension reads as something that belongs
+beside Claude Code rather than apart from it. It is still not theirs.
 
 It relies on undocumented details of the Claude Code extension, which an update can change
 at any time. When that happens, the status bar says *indeterminate session* and the

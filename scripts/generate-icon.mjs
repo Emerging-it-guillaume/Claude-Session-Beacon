@@ -1,5 +1,6 @@
 /**
- * Generates the extension logo: a dot surrounded by concentric rings — a beacon.
+ * Generates the extension logo: one editor tab pulled in front of another — the
+ * focused session, picked out of the row.
  *
  * The PNG is encoded here, by hand, on top of `node:zlib`. Pulling an image
  * library in for one 128×128 file would put third-party code in a repository
@@ -13,36 +14,46 @@ import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
 
 const SIZE = 128
-const CENTRE = SIZE / 2
 
-/** One hue for the signal, one accent for the session it names. Nothing else. */
-const HUE = [0x17, 0xa2, 0xa2]
-const ACCENT = [0x8b, 0x5c, 0xf6]
-
-const disc = (radius) => (distance) => distance <= radius
-const ring = (radius, width) => (distance) => Math.abs(distance - radius) <= width / 2
+/** Claude's own palette: the clay accent, and the warm neutral it sits on. */
+const CLAY = [0xd9, 0x77, 0x57]
+const SLATE = [0x7c, 0x7a, 0x72]
 
 /**
- * Radii and widths are the design. They are chosen so that no stroke and no gap
- * falls below 128/24 ≈ 5.4 px, which is what it takes for the logo to still read
- * as a dot inside rings once VS Code draws it at 24 px.
+ * A tab: square along the bottom, rounded across the top. Both sit on the same
+ * baseline, which is what makes them read as a row rather than as two cards.
+ */
+const tab =
+  ({ left, right, top, bottom, radius }) =>
+  (x, y) => {
+    if (x < left || x > right || y < top || y > bottom) return false
+    if (y >= top + radius) return true
+    const cx = Math.min(Math.max(x, left + radius), right - radius)
+    return Math.hypot(x - cx, y - (top + radius)) <= radius
+  }
+
+const BASELINE = 110
+
+/**
+ * Geometry is the design. The three tabs share a baseline, which is what makes them
+ * read as a row; the focused one is both taller and wider, which is what makes it
+ * read as the one in front. Every run of colour and every gap along a scanline is
+ * wider than 128/24 ≈ 5.4 px, so the row survives once VS Code draws it at 24 px.
  */
 const SHAPES = [
-  { covers: disc(16), colour: ACCENT },
-  { covers: ring(32, 9), colour: HUE },
-  { covers: ring(52, 7), colour: HUE },
-]
+  { colour: SLATE, ...{ left: 6, right: 35, top: 60, bottom: BASELINE, radius: 9 } },
+  { colour: CLAY, ...{ left: 43, right: 85, top: 20, bottom: BASELINE, radius: 12 } },
+  { colour: SLATE, ...{ left: 93, right: 122, top: 60, bottom: BASELINE, radius: 9 } },
+].map((shape) => ({ colour: shape.colour, covers: tab(shape) }))
 
 const SAMPLES = 4
 
-/** Fraction of the pixel covered by the shape, by supersampling its area. */
-function coverage(shape, px, py) {
+/** Fraction of the pixel for which `predicate` holds, by supersampling its area. */
+function coverage(predicate, px, py) {
   let hits = 0
   for (let sy = 0; sy < SAMPLES; sy++) {
     for (let sx = 0; sx < SAMPLES; sx++) {
-      const dx = px + (sx + 0.5) / SAMPLES - CENTRE
-      const dy = py + (sy + 0.5) / SAMPLES - CENTRE
-      if (shape.covers(Math.hypot(dx, dy))) hits++
+      if (predicate(px + (sx + 0.5) / SAMPLES, py + (sy + 0.5) / SAMPLES)) hits++
     }
   }
   return hits / (SAMPLES * SAMPLES)
@@ -54,11 +65,11 @@ function rasterise() {
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       for (const shape of SHAPES) {
-        const covered = coverage(shape, x, y)
+        const covered = coverage(shape.covers, x, y)
         if (covered === 0) continue
         const i = (y * SIZE + x) * 4
-        // The shapes never overlap, so coverage is the alpha and the colour is
-        // written unblended — which is also what keeps the palette at two entries.
+        // The tabs never overlap, so coverage is the alpha and the colour is written
+        // unblended — which is also what keeps the palette at two entries.
         pixels[i] = shape.colour[0]
         pixels[i + 1] = shape.colour[1]
         pixels[i + 2] = shape.colour[2]
