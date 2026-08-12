@@ -7,8 +7,9 @@ import {
   type ActiveTab,
   type BeaconState,
   type IndeterminateReason,
-  type ProcessProbe,
+  type SessionSummary,
 } from './beacon.mts'
+import { processProbe } from './probe.mts'
 
 /**
  * The VS Code adapter. It subscribes, flattens the editor into the seam's input,
@@ -39,17 +40,21 @@ const WHY: Record<IndeterminateReason, string> = {
 }
 
 /**
- * The process table is the one thing a fixture cannot hold, so it is injected.
- * Liveness lands with the registry (#4) and the parent chain with its refinement
- * (#7); until then nothing calls either, and answering "nothing known" keeps the
- * skeleton from claiming a session is alive.
+ * The same rule as the binary's, duplicated verbatim so both look in the same place.
+ * No setting of our own contributes here: a third source of truth would drift from the
+ * other two, and the only symptom would be a permanent, unexplainable *indeterminate*.
  */
-const probe: ProcessProbe = { isLiveClaude: () => false, ancestors: () => null }
-
-/** The same rule as the binary's, so both look in the same place. */
 function configDir(): string {
   const configured = process.env.CLAUDE_CONFIG_DIR
-  return configured ? configured : join(homedir(), '.claude')
+  return (configured ? configured : join(homedir(), '.claude')).normalize('NFC')
+}
+
+/** The sessions of this window, as the tooltip lists them under whatever is shown. */
+function sessionList(sessions: SessionSummary[]): string {
+  if (sessions.length === 0) return 'No live session in this window.'
+
+  const lines = sessions.map((s) => `• ${s.peerName} — pid ${s.pid} — ${s.cwd}`)
+  return [`Sessions in this window (${sessions.length}):`, ...lines].join('\n')
 }
 
 /**
@@ -113,13 +118,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const state = resolveBeacon({
       configDir: configDir(),
-      // Raw on purpose. Matching it against a session's `cwd` wants `realpath` and
-      // NFC normalisation, which is a disk read — it belongs with the registry in
-      // #4, inside the seam, where it only happens once a session tab is active.
+      // Raw on purpose: `realpath` and NFC normalisation touch the disk, so they
+      // happen inside the seam, where nothing is read until a session tab is active.
       windowCwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
       activeTab: readActiveTab(),
       previous,
-      probe,
+      probe: processProbe,
     })
     previous = state
 
@@ -130,12 +134,20 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const shown = ensureStatusBarItem(settings)
     if (state.kind === 'peer') {
-      // The name only. What sits behind it — the tooltip, the click that copies —
-      // arrives with the join in #6, which is what first produces this state.
+      // The name only. What sits behind it — the click that copies — arrives with the
+      // join in #6, which is what first produces this state.
       shown.text = `${ICON} ${state.peerName}`
+      shown.tooltip = sessionList(state.siblings)
     } else {
+      // What could not be identified is on the first line; what is running in this
+      // window is on the ones below. Knowing what sits next door is worth reading
+      // even — especially — when the tab in front of us cannot be named.
       shown.text = `${ICON} ${INDETERMINATE}`
-      shown.tooltip = `${INDETERMINATE} — ${WHY[state.reason]}`
+      shown.tooltip = [
+        `${INDETERMINATE} — ${WHY[state.reason]}`,
+        '',
+        sessionList(state.candidates),
+      ].join('\n')
     }
     shown.show()
   }

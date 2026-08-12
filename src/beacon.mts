@@ -5,6 +5,8 @@
  * and hands the answer back to the status bar without adding a rule of its own.
  */
 
+import { windowSessions } from './registry.mts'
+
 /** What the Claude webview labels a session tab that has no conversation title yet. */
 export const UNTITLED_TAB_LABEL = 'Claude Code'
 
@@ -69,13 +71,21 @@ export function resolveBeacon(input: BeaconInput): BeaconState {
   // RAM, where a window reload destroys it along with the sessions it named.
   if (!activeTab?.isClaudePanel) return previous ?? { kind: 'hidden' }
 
-  // A tab that carries the untitled label names no session: say so, and read nothing.
+  // The first disk read of the extension, and it happens here and nowhere earlier: a
+  // window where no session tab is ever focused costs nothing at all.
+  const candidates = windowSessions(input)
+
+  // No configuration directory: Claude Code is not installed on this side. A status
+  // bar is common ground — say nothing, and report nothing to a user who never asked.
+  if (candidates === null) return { kind: 'hidden' }
+
+  // A tab carrying the untitled label names no session, so no join is attempted on it.
+  // The sessions of the window are known all the same, and the tooltip shows them.
   if (activeTab.label === UNTITLED_TAB_LABEL) {
-    return { kind: 'indeterminate', reason: 'no-title', candidates: [] }
+    return { kind: 'indeterminate', reason: 'no-title', candidates }
   }
 
-  // The registry lands in #4 and the join on the conversation title in #6. Until
-  // candidates are gathered there is nothing for this label to match — which is
-  // exactly what `no-match` says, and the shape of the answer will not change.
-  return { kind: 'indeterminate', reason: 'no-match', candidates: [] }
+  // The join on the conversation title lands in #6. Until the transcripts are read,
+  // no candidate can be shown to carry this label — which is what `no-match` says.
+  return { kind: 'indeterminate', reason: 'no-match', candidates }
 }
