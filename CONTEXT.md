@@ -19,7 +19,9 @@ défaut de `basename(cwd)` + 2 hexadécimaux (`sentry-server-41`).
 _Avoid_: nom de session, name
 
 **Titre de conversation** :
-Le résumé auto-généré du premier message. Sert d'**étiquette humaine**, jamais d'adresse.
+Le résumé auto-généré du premier message (`ai-title`), ou celui que l'utilisateur a fixé à
+la main (`custom-title`), qui prime et gèle le premier. **Décrit** une session, ne l'adresse
+jamais.
 _Avoid_: nom, titre de session
 
 > Ces deux-là sont systématiquement confondus. Un **nom de pair** adresse ; un **titre de
@@ -55,6 +57,12 @@ Un panneau webview de type `claudeVSCodePanel` dans la zone d'édition. Une fen�
 contenir plusieurs.
 _Avoid_: onglet Claude, panneau
 
+**Étiquette d'onglet** :
+Ce que VS Code rend par `tab.label`. **N'est pas le titre de conversation** mais sa
+troncature à 24 caractères suivis de `…` au-delà de 25, ou `"Claude Code"` faute de titre.
+C'est la seule prise qu'offre l'API, et elle ne porte que 24 caractères d'information.
+_Avoid_: titre de l'onglet, nom de l'onglet
+
 **Session de barre latérale** :
 Une session hébergée dans la vue `claudeVSCodeSidebar` plutôt que dans un onglet. N'est pas
 un onglet et n'apparaît pas dans `tabGroups`.
@@ -65,7 +73,9 @@ La session correspondant à l'onglet de session actif de la fenêtre active. Not
 
 **Session indéterminée** :
 L'état d'un onglet de session actif qu'on ne parvient pas à relier à une session — onglet
-encore sans titre, ou titre partagé par plusieurs sessions. **N'est pas une erreur** :
+encore sans titre (étiquette `"Claude Code"`), ou **24 premiers caractères de titre**
+partagés par plusieurs sessions. Régime nominal pour des titres de même famille, pas cas
+limite : l'étiquette ne porte pas plus de 24 caractères. **N'est pas une erreur** :
 c'est un état affichable, et il doit l'être. Un nom de pair affiché à tort conduit à
 adresser la mauvaise session.
 _Avoid_: erreur, inconnu, non trouvé
